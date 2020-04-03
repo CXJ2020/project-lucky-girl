@@ -1,0 +1,164 @@
+---
+title: "GARCH"
+author: "TanQingyue"
+date: "2020/3/29"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## 1.前期准备
+
+## 1.1安装FinTS 程序包
+$ wget http://labfile.oss.aliyuncs.com/courses/900/FinTS_0.4-5.tar.gz
+
+## 1.2安装R 包
+tseries、FinTS、timeDate、timeSeries、fBasics、fGarch
+
+## 2.实验过程
+
+## 2.1计算对数收益率
+
+对上海证券综合指数日收盘价格取对数差分计算对数收益率。
+```{r}
+data<-read.csv("D:\\2345Downloads\\2000-2017.csv")
+##计算对数收益率
+close<-data[,2]          # 上证指数日收盘价
+n<-length(close)         # 获取数据的长度
+return<-log(close[2:n])-log(close[1:n-1])    # 上证指数的对数收益率
+head(return)             #查看 return 的前6行数据
+
+##也可以直接使用 diff 函数直接做差分求对数收益率
+return<-diff(log(close))
+head(return)
+```
+
+## 2.2股票指数的可视化
+
+在绘制图形之前，我们需要先将数据转化为时间序列格式，需要用到ts函数（用法：ts(数据向量，start=c(第一个数据所表示的年，月)，frequency=表示将时间分开的时间间隔)
+
+```{R}
+Close.ts<-ts(close,start=c(2000),freq=250) 
+Return.ts<-ts(return,start=c(2000),freq=250)
+par(mfrow=c(2,1))          #建立一个以两行一列排列图形的图形窗口
+plot(Close.ts,type="l",main="(a) Daily Closing Price of       
+     000001.SH",xlab="Date", ylab="Price", cex.main=0.95,las=1)     
+plot(Return.ts,type="l",main="(b) Daily Rate of Return of  
+     000001.SH",xlab="Date", ylab="Rate", cex.main=0.95, las=1)
+```
+图(a)就是上海证券综合指数的日收盘价，图（b）是日收益率的时序图。从图形分析结果来看，2008 年和 2015 年两个时间段有明显的波动聚集现象。
+
+## 2.3股票收益率的基本统计量
+首先求解数据的基本统计量
+
+```{R}
+library(tseries)
+u<-sum(return)/n                  # 求均值
+e<-sqrt(sum((return-u)^2)/(n-1))  # 求标准差
+s<-sum((return-u)^3)/((n-1)*e^3)  # 求偏度
+k<-sum((return-u)^4)/((n-1)*e^4)  # 求峰度
+jarque.bera.test(return)         # JB正态性检验
+```
+
+## 2.4ACF 图和 PACF 图
+用自相关函数（ACF）和偏自相关函数（PACF）来对收益率序列的自相关性进行分析。
+
+```{R}
+par(mfrow=c(2,1))   
+acf(return,main='',xlab='Lag (a)',ylab='ACF',las=1) #画自相关图 
+title(main='(a) the ACF of Return',cex.main=0.95)  #为图形加标题，并设置标题大小
+pacf(return,main='',xlab='Lag (b)',ylab='PACF',las=1) #画偏自相关图   
+title(main='(b) the PACF of Return',cex.main=0.95)
+```
+由 ACF 图和 PACF 图可以得出：两个图大部分函数值在置信区间内（图中蓝色虚线区域）上下跳跃,所以收益率序列自相关性很低,或者说具有很弱的自相关性，因此在条件期望模型中不需要引入自相关性部分，满足GARCH模型中的均值方程，收益率由一个常数项加上一个随机扰动项组成。
+
+要拟合 GARCH 模型，我们还需要考察收益率平方的自相关性
+
+```{R}
+par(mfrow=c(2,1))  
+return.square<-return^2
+acf(return.square,main='',xlab='Lag (c)',ylab='ACF',las=1)               
+title(main='(a) the ACF of Return Square',cex.main=0.95)
+pacf(return.square,main='',xlab='Lag (d)',ylab='PACF',las=1)    
+title(main='(b) the PACF of Return Square',cex.main=0.95)
+```
+尽管股价收益率序列的 ACF 值揭示了其弱相关性,但收益率平方的ACF值却表现出了一定的相关性和持续性，其大部分值都超过了置信区间（图中蓝色虚线）。注意到收益率平方的ACF值在滞后3、10、21、30期后都有缓慢衰退,说明了方差序列具有一定程度的序列相关性,因此采用 GARCH 模型来描述股价波动过程中的条件方差。
+
+## 2.5ARCH 效应的检验
+收益率的时序图表明，在日收益率数据中可能存在ARCH效应，如果存在ARCH效应，则可以进行GARCH模型的拟合。反之，不能用 GARCH 模型拟合方程。
+
+```{R}
+##ARCH 效应的检验，可以用FinTS包中的LM 检验
+library(zoo)
+library(FinTS)   #LM检验
+ArchTest(return,lag=12)  #滞后 12 期
+```
+检验的原假设是：不存在 ARCH 效应。检验结果为卡方统计量的值为389.3，对应的 P 值几乎为0，也就是说在 1% 的显著性水平上拒绝原假设，从而拒绝不存在 ARCH 效应的假设，收益率序列存在 ARCH 效应，可以进行 GARCH 模型的拟合。
+
+## 2.6GARCH 模型的估计
+
+拟合GARCH（1,1）模型d的同时拟合GARCH（1,2）、GARCH（2,1）、GARCH（2,2）模型，并运用信息准则来选择最优模型。
+```{R}
+library(timeDate)
+library(timeSeries)
+library(fBasics)
+library(fGarch) 
+m1<-garchFit(~1+garch(1,1),data=return,trace=F) #拟合GARCH（1,1）模型
+m2<-garchFit(~1+garch(1,2),data=return,trace=F) #拟合GARCH（1,2）模型
+m3<-garchFit(~1+garch(2,1),data=return,trace=F) #拟合GARCH（2,1）模型
+m4<-garchFit(~1+garch(2,2),data=return,trace=F) #拟合GARCH（2,2）模型
+summary(m1)  #显示模型的详细拟合结果
+summary(m2)
+summary(m3)
+```
+由信息准则的值可以看出，拟合的4个GARCH模型的AIC、BIC、SIC、HQIC的值，发现随着参数增加,模型的AIC,BIC等的值并没有显著增加。理论上选择最简洁的模型GARCH(1,1)建模最合适。
+
+## 2.7GARCH 模型的标准化残差分析
+拟合完 GARCH 模型后我们对模型结果的残差进行分析。
+
+```{R}
+resi<-residuals(m1,standardize=T)   #获得标准化残差
+res<-ts(resi,frequency=250,start=c(2000))  
+plot(res,xlab='Date',ylab='st.resi',type='l')  #画出残差序列时序图
+```
+根据残差序列的时序图，可以看到残差序列没有明显的波动聚集效应
+
+```{R}
+par(mfcol=c(2,2))
+acf(resi,lag=24)
+acf(resi^2,lag=24)
+pacf(resi,lag=24)
+pacf(resi^2,lag=24)
+```
+上图是残差和残差平方的自相关图和偏自相关图。可以看到残差序列的ACF和PACF图大部分函数值在置信区间内（图中蓝色的虚线区域）上下跳跃,所以标准化残差序列并不具有自相关性，或者具有一定的弱相关性（PACF图结果）。而残差平方序列的 ACF 和 PACF 图都没有明显的拖尾或截尾现象,所有函数值都在置信区间内，因此其不具序列相关性。再将标准化冲击平方的ACF值与收益率平方的ACF值进行比较,结果表明 GARCH 模型可以有效地解释收益率序列。
+
+对标准化残差平方用进行 Ljung-Box 方法进行检验
+
+```{R}
+Box.test(resi^2,lag=10,type='Ljung')  #残差平方的滞后10阶自相关检验
+Box.test(resi^2,lag=15,type='Ljung')  #残差平方的滞后15阶自相关检验
+Box.test(resi^2,lag=20,type='Ljung')  #残差平方的滞后20阶自相关检验
+
+```
+
+## 2.8拟合EGARCH模型
+```{R}
+library(rugarch)
+myspec=ugarchspec(
+  variance.model = list(model = "eGARCH", garchOrder = c(2, 1)),
+  mean.model = list(armaOrder = c(0,0), include.mean = TRUE),
+  distribution.model = "std"
+)
+
+myfit=ugarchfit(myspec,data=return,solver="gosolnp")
+myfit
+```
+
+
+
+
+
