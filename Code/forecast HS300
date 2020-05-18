@@ -1,0 +1,63 @@
+---
+title: "沪深300预测"
+author: "Liu Yuzhi"
+date: "2020/5/18"
+output: html_document
+---
+##载入安装包
+```{r}
+
+library(fBasics)
+library(fGarch)
+library(rugarch)#garch拟合与预测
+library(TSA)#BIC准则确定arma阶数  eacf确定garch阶数
+library(forecast)#auto.arima() arma阶数确定方法
+library(psych)#数据描述统计分析
+library(ggplot2)#绘图
+```
+
+
+## 导入数据
+
+
+2016年2月-2020年5月沪深300指数为数据，一共有1042个数据。
+```{r}
+setwd("C:/Users/10982/E-GARCH.again/data")
+HS<-read.csv("HS300.csv")
+##计算对数收益率
+dHS<-diff(log(HS$CLOSE))
+head(dHS)
+
+```
+
+
+## ARMA定阶
+
+
+测算ACF与PACF ，定阶（ARMA),为UGARCH函数式中使用。测算得到ARMA(4,4)最为合适
+```{r}
+library("forecast")
+forecast::ggtsdisplay(dHS)
+```
+
+
+## 建模
+
+
+ugarchspec函数的参数也被分解为为三个主要部分，分别是variance.model，对应式（3），mean.model，对应式（1），distribution.model对应式（2）中的$\epsilon$。用户通过对三个部分的参数的分别设定从而构造出自己想用的模型。
+```{R}
+myspec=ugarchspec(
+  variance.model = list(model = "eGARCH", garchOrder = c(1, 1)),
+  mean.model = list(armaOrder = c(4,4), include.mean = TRUE),
+  distribution.model = "std"
+)
+myfit=ugarchfit(myspec,data=dHS,solver="gosolnp")
+myfit
+```
+
+
+## 预测
+```{R}
+forc=ugarchforecast(myfit, n.ahead = 20)
+forc
+```
