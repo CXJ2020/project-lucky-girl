@@ -1,226 +1,229 @@
 ---
-title: "疫情下股市预测分析"
-author: "程慧琦 刘昱枝 谭晴月 郭芳"
+title: "疫情背景下股票数据的预测分析"
+author: ' 程慧琦 谭晴月 刘昱枝 郭芳'
 date: "2020/5/21"
 output:
   slidy_presentation: default
   ioslides_presentation:
     smaller: yes
     widecreen: yes
+subtitle: lucky girls
 ---
-
-# 3.Egarch模型预测
-
-
 ##
 <font size=6>
-**3.1 rugarch包介绍 **
+**演讲内容**
 </font>
+<br/>
+
+#### 1.绪论
+
+#### 2.描述性分析
+
+#### 3.基于VAR曲线的收益风险预警
+
+#### 4.基于Egarch模型预测
+
+#### 5.基于Knn方法预测
+
+#### 6.展望
 
 
- - 该模型由三个部分构成，均值方程对应式（1），分布假设对应（2），方差方程对应式（3），对三个部分进行适当的变形后可以形成egarch模型，egarch-ged模型，egarch-t模型，Igarch模型，garch-m模型和Qgarch模型等。因此，设定模型形式就是分别设定均值方程、方差方程和分布。
-
-
- - rugarch包的优越之处正在于这里。ugarchspec函数的参数也被分解为为三个主要部分，分别是variance.model，对应式（3），mean.model，对应式（1），distribution.model对应式（2）中的$\epsilon$。通过对三个部分的参数的分别设定从而构造出自己想用的模型。
- 
- 
-$r_{t}=c_1+\sum_{i=1}^{R}\phi_{i}r_{t-i}+\sum_{j=1}^{M}\phi_{j}ϵ_{t-j}+ϵ_{t}$(1)
-
-$ϵ_{t}=\mu_{t}\sqrt{h_{t}}$(2)
-
-$h_{t}=k+\sum_{i=1}^{q}G_{i}h_{t-i}+\sum_{i=1}^{p}A_{i}{ϵ_{t-i}}^2$(3)
-
-
-
-
-##
-<font size=6>
-**3.2 预测过程 **
-</font>
-
-
-- 载入包
-```{r, echo = T, eval = F}
-
-library (fBasics)
-library (rugarch)#garch拟合与预测
-library (forecast)#auto.arima() arma阶数确定方法
-library (ggplot2)#绘图
-```
-
-```{r, echo = F, eval = T}
-
-library(fBasics)
-library(rugarch)#garch拟合与预测
-library(forecast)#auto.arima() arma阶数确定方法
-library(ggplot2)#绘图
-``` 
-
-##
-<font size=6>
-**3.2预测过程**
-</font>
-
-
-- 载入数据
-```{r echo=T, out.width = '80%'}
-HS <- read.csv ("E://assignment2//project//midproject//data//hushen300.csv")
-##计算对数收益率
-dHS <- diff (log(HS$closeprice))
-head (dHS)
-```
-
-
- - 2016年2月4日-2020年5月15日沪深300指数为数据，一共有1042个数据。
-
-
- 
- 
-##
-<font size=6>
-**3.2预测过程**
-</font>
-
-
-- ARMA定阶
-```{r echo=T, out.width = '80%'}
-forecast::ggtsdisplay (dHS)
-```
-
-
-
-##
-<font size=6>
-**3.2预测过程**
-</font>
- 
- 
- - 建模
-```{r, echo = T, eval = T}
-myspec = ugarchspec(
-  variance.model = list(model = "eGARCH", garchOrder = c(1, 1)),
-  mean.model = list(armaOrder = c(4,4), include.mean = TRUE),
-  distribution.model = "std"
-)
-myfit = ugarchfit ( myspec, data=dHS, solver = "gosolnp" )
-myfit
-```
-
-##
-<font size=6>
-**3.2预测过程**
-</font>
- 
- 
- - 建模
-```{r, echo = T, eval = F}
-myspec = ugarchspec(
-  variance.model = list(model = "eGARCH", garchOrder = c(1, 1)),
-  mean.model = list(armaOrder = c(4,4), include.mean = TRUE),
-  distribution.model = "std"
-)
-myfit = ugarchfit ( myspec, data=dHS, solver = "gosolnp" )
-myfit
-```
- 
- - model 是一个字符串，指定拟合哪种类型的 GARCH 模型。包支持许多主要的 GARCH 模型（例如 EGARCH、IGARCH 等），对于“普通”GARCH 模型，要将其设置为 sGARCH（或者只是忽略它，标准模型是默认的)，此处设置为为 EGARCH。
- garchOrder 是模型中 ARCH 和 GARCH 部分的阶数向量。
-
-
- - mean.model 允许拟合 ARMA-GARCH 模型，并且像 variance.model 一样接受一个命名列表，最感兴趣的参数是 armaOrder 和 include.mean。armaOrder 就像 garchOrder，它是一个指定 ARMA 模型阶数的向量。include.mean 是一个布尔值，如果为 true，则允许模型的 ARMA 部分具有非零均值。
-
-
-
-##
-<font size=6>
-**3.3预测结果**
-</font>
-
-
- - 预测20个工作日的数据，即2020年5月16日-2020年6月4日的数据。
-```{r echo=T, out.width = '80%'}
- forc = ugarchforecast ( myfit, n.ahead = 20)
-forc
-```
-
-
-##
-<font size=6>
-**3.3预测结果**
-</font>
-
-
- - 数据还原
- 
- 
-  - 数据建模之前进行平稳化化处理，去除了趋势（差分取对数），因此对数据还原，方便观察。
-```{R}
- t = forc@forecast [["seriesFor"]]
- m = HS$closeprice [1042]
-  x=t
-  x[1] = m + exp(t[1])
- for (i in 2:20) {
-    x[i] = x[i-1]+ exp(t[i])
- }
-date = c("2020/5/16", "2020/5/17", "2020/5/18","2020/5/19", "2020/5/20", "2020/5/21", "2020/5/22", "2020/5/23", "2020/5/24", "2020/5/25", "2020/5/26", "2020/5/27", "2020/5/28", "2020/5/29", "2020/5/30", "2020/5/31", "2020/6/1", "2020/6/2", "2020/6/3", "2020/6/4")
-xx = data.frame (date,x)
-names (xx) = c("time","closeprice")
-xl = rbind(HS,xx)
-```
-
-
-
-##
-<font size=6>
-**3.3预测结果**
-</font>
-
-
- - 从预测的结果来看，在未来20个工作日内，股票价格将持续上升。
- 
- 
- - 从5月16日的 3913 上升到6月4日的 3932
-```{R}
-ggplot (xx, mapping = aes (x = time , y = closeprice, group=1))+ geom_line()
-```
-
-
-##
-<font size=6>
-**3.3预测结果**
-</font>
-
-
- - 时序图
-```{R}
-plot (ts ( xl$closeprice))
-
-```
 <br/>
 <br/>
 <br/>
 <br/>
 
-# 4.基于VAR曲线的收益风险预警
+
+
+# 1.绪论
+##
+<font size=6>
+**1.1 研究背景**
+</font>
+
+- 2020年初，新冠肺炎疫情给中国带来了巨大的挑战。面对严峻形势，2020年2月10日，习近平总书记在北京调研指导新冠肺炎疫情防控工作时强调“以更坚定的信心、更顽强的意志、更果断的措施，坚决打赢防控的人民战争、总体战、阻击战”。显示出国家对于疫情防控的坚定决心和“始终把人民群众生命安全和身体健康放在首位，全力以赴救治患者”的疫情防控理念。
+
+- 在积极应对疫情的时候也要认识到这次疫情给经济带来的巨大冲击。已有研究显示，类似于新冠肺炎疫情这类突发大规模疫情对于社会经济综合影响往往更需要被关注，其影响涉及国家、地区发展和人民生活水平等各个经济层面（李正全2003）。突发大规模疫情往往表现为爆发突然、传播速度快、影响区域相对集中、社会恐慌程度高等特点（Fang L Q et al.，2009）。因此该类疫情也表现出短期经济和特定产业影响特征，对长期经济影响相对有限，疫情后经济恢复能力较强。
+
+- 金融市场尤其是股票市场受到投资者的情绪影响程度较大。新冠肺炎疫情极大地影响力投资者的信心以及投资者对经济基本面的悲观预期使疫情发生以来我国的股票市场发生大幅震荡，当新冠肺炎疫情在全球快速蔓延后，美国等国家的金融市场也发生大幅震荡
+
+
+
+
+##
+
+<font size=6>
+**1.2 文献综述**
+</font>
+
+-  李正全.SARS影响国民经济的短期与长期分析[J].经济科学，2015(3)
+- 张文斗,祖正虎,许晴,等.突发大规模疫情对经济的影响分析[J].军事医学,2014(2)
+
+
+- Egarch模型预测参考
+
+https://blog.csdn.net/weixin_30565199/article/details/97739736
+https://bbs.pinggu.org/thread-5491300-1-1.html
+https://www.cnblogs.com/xuruilong100/p/10404054.html
+
+- Knn模型预测参考
+
+https://cran.r-project.org/web/packages/tsfknn/vignettes/tsfknn.html      https://github.com/vipulmayank/GoogleStockPriceForecasting_COVID19
+
+
+
+##
+<font size=6>
+**1.2 数据来源**
+</font>
+
+- 从大智慧股票软件上下载沪深300、标普500指数股票数据
+- 从狗熊会公众号中下载全国疫情数据
+- 从狗熊会公众号中下载美国疫情数据
+
+<br/>
+<br/>
+<br/>
+<br/>
+
+
+# 2.描述性分析
+##
+<font size=6>
+
+**2.1国内生产总值环比增长速度**
+</font>
+
+<div align=center>
+![](gdp.png)
+
+</div>
+
+<br/>
+<br/>
+<br/>
+<br/>
+
+
+##
+
+<font size=6>
+
+**2.2社会消费品零售总额累计增长率**
+</font>
+
+<div align=center>
+![](trs.png)
+
+</div>
+
+
+
+##
+<font size=6>
+
+**2.3新冠疫情发生以来沪深300指数**
+</font>
+
+<div align=center>
+![](hs300.png)
+
+</div>
+
+<br/>
+<br/>
+<br/>
+<br/>
+
+
+##
+<font size=6>
+
+**2.4中国新冠肺炎新增确诊人数**
+</font>
+
+<div align=center>
+![](nc.png)
+
+</div>
+
+<br/>
+<br/>
+<br/>
+<br/>
+
+##
+<font size=6>
+
+**2.4中国新冠肺炎新增确诊人数**
+</font>
+
+<div align=center>
+![](nc1.png)
+
+
+</div>
+
+<br/>
+<br/>
+<br/>
+<br/>
+
+##
+<font size=6>
+
+ **2.5标普500指数收盘价**
+</font>
+
+<div align=center>
+![](spx.png)
+
+
+</div>
+
+<br/>
+<br/>
+<br/>
+<br/>
+
+##
+<font size=6>
+
+**2.6美国新冠肺炎新增确诊人数**
+</font>
+
+<div align=center>
+![](usnc.png)
+
+</div>
+
+<br/>
+<br/>
+<br/>
+<br/>
+
+
+
+# 3.基于VAR曲线的收益风险预警
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ##
 <font size=6>
-**4.1 前言 **
+**3.1 前言 **
 </font>
 
 这部分我将通过度量股票指数收益率的波动性，进一步研究疫情给我国股票市场带来的不确定性和风险性。首先我运用GARCH模型拟合了股票指数收益率的波动性方程，并实证研究了在中国具有一定代表性的沪深300指数在疫情冲击下的波动情况。结果表明我国股票市场在疫情期间受到了持续性的冲击。具体而言我国股票市场对利好利坏消息均敏感，表明了我国股票市场抗击风险的薄弱性。此外，我尝试使用SGARCH模型对股票收益率序列进行滚动预测，基于Var曲线的研究表明，在疫情爆发初始股市就已经发出了危机预警信号。
  
 ##
 <font size=6>
-**4.2 实际操作**
+**3.2 实际操作**
 <font>
 
 ##
 <font size = 6>
-**4.2.1 包载入与数据预处理**
+**3.2.1 包载入与数据预处理**
 <font>
 
 ```{r,echo = T, eval = T}
@@ -257,7 +260,7 @@ rlogdiffdata=coredata(rlogdiff)
 
 ##
 <font size = 6>
-**4.2.2 正态性检验**
+**3.2.2 正态性检验**
 <font>
 
 ```{r}
@@ -272,7 +275,7 @@ plot(rlogdiff,ylab="value");abline(h=0,lty=2)#third graph
 
 ##
 <font size = 6>
-**4.2.3 平稳性检验**
+**3.2.3 平稳性检验**
 <font>
 
 ```{r}
@@ -296,7 +299,7 @@ lmresult=McLeod.Li.test(y=residuals(armamodel))#残差arch效应很显著
 
 ##
 <font size = 6>
-**4.2.4 模型拟合**
+**3.2.4 模型拟合**
 <font>
 
 
@@ -315,7 +318,7 @@ myfit
 
 ##
 <font size = 6>
-**4.2.5 模型诊断**
+**3.2.5 模型诊断**
 <font>
 
 
@@ -342,7 +345,7 @@ plot(myfit,which=12)
 
 ##
 <font size = 6>
-**4.2.6 基于VAR曲线的收益风险预警**
+**3.2.6 基于VAR曲线的收益风险预警**
 <font>
 
 
@@ -371,7 +374,200 @@ plot(roll,which=4,VaR.alpha=0.01)
 <br/>
 <br/>
 
-# 5.knn模型预测
+
+# 4.基于Egarch模型预测
+
+
+##
+<font size=6>
+**4.1 rugarch包介绍 **
+</font>
+
+
+ - 该模型由三个部分构成，均值方程对应式（1），分布假设对应（2），方差方程对应式（3），对三个部分进行适当的变形后可以形成egarch模型，egarch-ged模型，egarch-t模型，Igarch模型，garch-m模型和Qgarch模型等。因此，设定模型形式就是分别设定均值方程、方差方程和分布。
+
+
+ - rugarch包的优越之处正在于这里。ugarchspec函数的参数也被分解为为三个主要部分，分别是variance.model，对应式（3），mean.model，对应式（1），distribution.model对应式（2）中的$\epsilon$。通过对三个部分的参数的分别设定从而构造出自己想用的模型。
+ 
+ 
+$r_{t}=c_1+\sum_{i=1}^{R}\phi_{i}r_{t-i}+\sum_{j=1}^{M}\phi_{j}ϵ_{t-j}+ϵ_{t}$(1)
+
+$ϵ_{t}=\mu_{t}\sqrt{h_{t}}$(2)
+
+$h_{t}=k+\sum_{i=1}^{q}G_{i}h_{t-i}+\sum_{i=1}^{p}A_{i}{ϵ_{t-i}}^2$(3)
+
+
+
+
+##
+<font size=6>
+**4.2 预测过程 **
+</font>
+
+
+- 载入包
+```{r, echo = T, eval = F}
+
+library (fBasics)
+library (rugarch)#garch拟合与预测
+library (forecast)#auto.arima() arma阶数确定方法
+library (ggplot2)#绘图
+```
+
+```{r, echo = F, eval = T}
+
+library(fBasics)
+library(rugarch)#garch拟合与预测
+library(forecast)#auto.arima() arma阶数确定方法
+library(ggplot2)#绘图
+``` 
+
+##
+<font size=6>
+**4.2预测过程**
+</font>
+
+
+- 载入数据
+```{r echo=T, out.width = '80%'}
+HS <- read.csv ("E://assignment2//project//midproject//data//hushen300.csv")
+##计算对数收益率
+dHS <- diff (log(HS$closeprice))
+head (dHS)
+```
+
+
+ - 2016年2月4日-2020年5月15日沪深300指数为数据，一共有1042个数据。
+
+
+ 
+ 
+##
+<font size=6>
+**4.2预测过程**
+</font>
+
+
+- ARMA定阶
+```{r echo=T, out.width = '80%'}
+forecast::ggtsdisplay (dHS)
+```
+
+
+
+##
+<font size=6>
+**4.2预测过程**
+</font>
+ 
+ 
+ - 建模
+```{r, echo = T, eval = T}
+myspec = ugarchspec(
+  variance.model = list(model = "eGARCH", garchOrder = c(1, 1)),
+  mean.model = list(armaOrder = c(4,4), include.mean = TRUE),
+  distribution.model = "std"
+)
+myfit = ugarchfit ( myspec, data=dHS, solver = "gosolnp" )
+myfit
+```
+
+##
+<font size=6>
+**4.2预测过程**
+</font>
+ 
+ 
+ - 建模
+```{r, echo = T, eval = F}
+myspec = ugarchspec(
+  variance.model = list(model = "eGARCH", garchOrder = c(1, 1)),
+  mean.model = list(armaOrder = c(4,4), include.mean = TRUE),
+  distribution.model = "std"
+)
+myfit = ugarchfit ( myspec, data=dHS, solver = "gosolnp" )
+myfit
+```
+ 
+ - model 是一个字符串，指定拟合哪种类型的 GARCH 模型。包支持许多主要的 GARCH 模型（例如 EGARCH、IGARCH 等），对于“普通”GARCH 模型，要将其设置为 sGARCH（或者只是忽略它，标准模型是默认的)，此处设置为为 EGARCH。
+ garchOrder 是模型中 ARCH 和 GARCH 部分的阶数向量。
+
+
+ - mean.model 允许拟合 ARMA-GARCH 模型，并且像 variance.model 一样接受一个命名列表，最感兴趣的参数是 armaOrder 和 include.mean。armaOrder 就像 garchOrder，它是一个指定 ARMA 模型阶数的向量。include.mean 是一个布尔值，如果为 true，则允许模型的 ARMA 部分具有非零均值。
+
+
+
+##
+<font size=6>
+**4.3预测结果**
+</font>
+
+
+ - 预测20个工作日的数据，即2020年5月16日-2020年6月4日的数据。
+```{r echo=T, out.width = '80%'}
+ forc = ugarchforecast ( myfit, n.ahead = 20)
+forc
+```
+
+
+##
+<font size=6>
+**4.3预测结果**
+</font>
+
+
+ - 数据还原
+ 
+ 
+ - 数据建模之前进行平稳化化处理，去除了趋势（差分取对数），因此对数据还原，方便观察。
+```{R}
+ t = forc@forecast [["seriesFor"]]
+ m = HS$closeprice [1042]
+  x=t
+  x[1] = m + exp(t[1])
+ for (i in 2:20) {
+    x[i] = x[i-1]+ exp(t[i])
+ }
+date = c("2020/5/16", "2020/5/17", "2020/5/18","2020/5/19", "2020/5/20", "2020/5/21", "2020/5/22", "2020/5/23", "2020/5/24", "2020/5/25", "2020/5/26", "2020/5/27", "2020/5/28", "2020/5/29", "2020/5/30", "2020/5/31", "2020/6/1", "2020/6/2", "2020/6/3", "2020/6/4")
+xx = data.frame (date,x)
+names (xx) = c("time","closeprice")
+xl = rbind(HS,xx)
+```
+
+
+
+##
+<font size=6>
+**4.3预测结果**
+</font>
+
+
+ - 从预测的结果来看，在未来20个工作日内，股票价格将持续上升。
+ 
+ 
+ - 从5月16日的 3913 上升到6月4日的 3932
+```{R}
+ggplot (xx, mapping = aes (x = time , y = closeprice, group=1))+ geom_line()
+```
+
+
+##
+<font size=6>
+**4.3预测结果**
+</font>
+
+
+ - 时序图
+```{R}
+plot (ts ( xl$closeprice))
+
+```
+<br/>
+<br/>
+<br/>
+<br/>
+
+# 5.基于knn模型预测
 
 
 ##

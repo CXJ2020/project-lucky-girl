@@ -3124,500 +3124,9 @@ slide:not(.current) .plotly.html-widget{
           </hgroup>
   </slide>
 
-<p><br/> <br/> <br/> <br/></p>
+<slide class="segue dark nobackground level1"><hgroup class = 'auto-fadein'><h2>5.基于knn方法预测</h2></hgroup><article  id="基于knn方法预测" class="smaller ">
 
-<p>#4.基于VAR曲线的收益风险预警</p>
-
-<slide class=""><hgroup><h2></h2></hgroup><article  id="section" class="smaller ">
-
-<p><font size=6> <strong>4.1 前言 </strong> </font></p>
-
-<p>这部分我将通过度量股票指数收益率的波动性，进一步研究疫情给我国股票市场带来的不确定性和风险性。首先我运用GARCH模型拟合了股票指数收益率的波动性方程，并实证研究了在中国具有一定代表性的沪深300指数在疫情冲击下的波动情况。结果表明我国股票市场在疫情期间受到了持续性的冲击。具体而言我国股票市场对利好利坏消息均敏感，表明了我国股票市场抗击风险的薄弱性。此外，我尝试使用SGARCH模型对股票收益率序列进行滚动预测，基于Var曲线的研究表明，在疫情爆发初始股市就已经发出了危机预警信号。</p>
-
-</article></slide><slide class=""><hgroup><h2></h2></hgroup><article  id="section-1" class="smaller ">
-
-<p><font size=6> <strong>4.2 实际操作</strong> <font></p>
-
-</article></slide><slide class=""><hgroup><h2></h2></hgroup><article  id="section-2" class="smaller ">
-
-<p><font size = 6> <strong>4.2.1 包载入与数据预处理</strong> <font></p>
-
-<pre class = 'prettyprint lang-r'>#包载入
-library(fGarch)</pre>
-
-<pre >## Loading required package: timeDate</pre>
-
-<pre >## Loading required package: timeSeries</pre>
-
-<pre >## Loading required package: fBasics</pre>
-
-<pre class = 'prettyprint lang-r'>library(rugarch)#garch拟合与预测</pre>
-
-<pre >## Loading required package: parallel</pre>
-
-<pre >## 
-## Attaching package: &#39;rugarch&#39;</pre>
-
-<pre >## The following object is masked from &#39;package:stats&#39;:
-## 
-##     sigma</pre>
-
-<pre class = 'prettyprint lang-r'>library(TSA)#BIC准则确定arma阶数  eacf确定garch阶数</pre>
-
-<pre >## 
-## Attaching package: &#39;TSA&#39;</pre>
-
-<pre >## The following objects are masked from &#39;package:timeDate&#39;:
-## 
-##     kurtosis, skewness</pre>
-
-<pre >## The following objects are masked from &#39;package:stats&#39;:
-## 
-##     acf, arima</pre>
-
-<pre >## The following object is masked from &#39;package:utils&#39;:
-## 
-##     tar</pre>
-
-<pre class = 'prettyprint lang-r'>library(tseries)</pre>
-
-<pre >## Registered S3 method overwritten by &#39;quantmod&#39;:
-##   method            from
-##   as.zoo.data.frame zoo</pre>
-
-<pre class = 'prettyprint lang-r'>library(zoo)#转换成时间序列类型</pre>
-
-<pre >## 
-## Attaching package: &#39;zoo&#39;</pre>
-
-<pre >## The following object is masked from &#39;package:timeSeries&#39;:
-## 
-##     time&lt;-</pre>
-
-<pre >## The following objects are masked from &#39;package:base&#39;:
-## 
-##     as.Date, as.Date.numeric</pre>
-
-<pre class = 'prettyprint lang-r'>library(forecast)#auto.arima() arma阶数确定方法</pre>
-
-<pre >## Registered S3 methods overwritten by &#39;forecast&#39;:
-##   method       from
-##   fitted.Arima TSA 
-##   plot.Arima   TSA</pre>
-
-<pre class = 'prettyprint lang-r'>library(psych)#数据描述统计分析</pre>
-
-<pre >## 
-## Attaching package: &#39;psych&#39;</pre>
-
-<pre >## The following object is masked from &#39;package:fBasics&#39;:
-## 
-##     tr</pre>
-
-<pre >## The following object is masked from &#39;package:timeSeries&#39;:
-## 
-##     outlier</pre>
-
-<pre class = 'prettyprint lang-r'>library(ggplot2)#绘图</pre>
-
-<pre >## 
-## Attaching package: &#39;ggplot2&#39;</pre>
-
-<pre >## The following objects are masked from &#39;package:psych&#39;:
-## 
-##     %+%, alpha</pre>
-
-<pre class = 'prettyprint lang-r'>library(ccgarch)#JB统计量
-
-#数据预处理
-StockData&lt;-read.csv(&quot;E://assignment2//project//midproject//data//hushen300.csv&quot;,encoding=&#39;utf-8&#39;,header = T)  #header = Falese 
-time&lt;-as.Date(StockData$&#39;time&#39;,format=&quot;%Y/%m/%d&quot;)
-closeprice&lt;-StockData$&#39;closeprice&#39;
-data&lt;-zoo(closeprice,time)
-#选中局部数据
-selectdata=window(data, start = as.Date(&quot;2015-05-01&quot;), end = as.Date(&quot;2020-05-01&quot;))
-plot(selectdata,xlab=&quot;time&quot;,ylab=&quot;index&quot;,main=&quot;CSI 300 index&quot;)</pre>
-
-<p><img src="郭芳midproject_files/figure-html/unnamed-chunk-1-1.png" width="720" /></p>
-
-<pre class = 'prettyprint lang-r'>rlog=log(selectdata)
-rlogdiff=diff(log(selectdata))*100 #数据转换
-rlogdifftime=index(rlogdiff)
-rlogdiffdata=coredata(rlogdiff)</pre>
-
-<p>波动图表明，自2020年初新冠肺炎疫情爆发开始，我国沪深300指数收益率就表现出了一定程度的波动。</p>
-
-</article></slide><slide class=""><hgroup><h2></h2></hgroup><article  id="section-3" class="smaller ">
-
-<p><font size = 6> <strong>4.2.2 正态性检验</strong> <font></p>
-
-<pre class = 'prettyprint lang-r'>par(mfrow=c(1,3),oma=c(0.2,0.2,0.2,0.2))
-hist(rlogdiff,main=&quot;CSI 300 index Log Return Distribution&quot;,col=&quot;yellow&quot;,xlab=&quot;&quot;,ylim=c(0,0.4),probability=T)
-lines(density(rlogdiff),lwd=1);rug(rlogdiff)#first graph
-qqnorm(rlogdiff);qqline(rlogdiff)#second graph
-plot(rlogdiff,ylab=&quot;value&quot;);abline(h=0,lty=2)#third graph</pre>
-
-<p><img src="郭芳midproject_files/figure-html/unnamed-chunk-2-1.png" width="720" /> 上图为数据分布函数，QQ图，对数收益率序列折现图。由数据分布图、QQ图可以看出金融时间序列确实表现出尖峰厚尾性，相对于标准正态分布，峰度更高，两段的尾部更厚，也就是极值更多。由收益率波动序列可以看出各国股票指数收益率序列在样本区间内均表现出一定的波动性和聚集性，其中2015-2016年、2020年初波动幅度尤为明显。</p>
-
-</article></slide><slide class=""><hgroup><h2></h2></hgroup><article  id="section-4" class="smaller ">
-
-<p><font size = 6> <strong>4.2.3 平稳性检验</strong> <font></p>
-
-<pre class = 'prettyprint lang-r'>#若 ADF  p&lt;0.01  认为序列是均值回归的
-adf.test(rlog,alt=&quot;stationary&quot;)#注意  这是未差分的数据</pre>
-
-<pre >## 
-##  Augmented Dickey-Fuller Test
-## 
-## data:  rlog
-## Dickey-Fuller = -3.226, Lag order = 10, p-value = 0.08343
-## alternative hypothesis: stationary</pre>
-
-<pre class = 'prettyprint lang-r'>adf.test(rlogdiffdata,alt=&quot;stationary&quot;)#这是差分后的数据</pre>
-
-<pre >## Warning in adf.test(rlogdiffdata, alt = &quot;stationary&quot;): p-value smaller than
-## printed p-value</pre>
-
-<pre >## 
-##  Augmented Dickey-Fuller Test
-## 
-## data:  rlogdiffdata
-## Dickey-Fuller = -11.054, Lag order = 10, p-value = 0.01
-## alternative hypothesis: stationary</pre>
-
-<pre class = 'prettyprint lang-r'>#得先arima拟合模型，对残差进行LM检验
-armamodel=auto.arima(rlogdiff)#自动基于AIC最小准则，寻找最佳拟合模型
-armamodel</pre>
-
-<pre >## Series: rlogdiff 
-## ARIMA(1,0,0) with zero mean 
-## 
-## Coefficients:
-##           ar1
-##       -0.0151
-## s.e.   0.0348
-## 
-## sigma^2 estimated as 2.418:  log likelihood=-2267.25
-## AIC=4538.49   AICc=4538.5   BIC=4549.51</pre>
-
-<pre class = 'prettyprint lang-r'>plot(residuals(armamodel))</pre>
-
-<p><img src="郭芳midproject_files/figure-html/unnamed-chunk-3-1.png" width="720" /></p>
-
-<pre class = 'prettyprint lang-r'>par(mfrow=c(1,1))
-lmresult=McLeod.Li.test(y=residuals(armamodel))#残差arch效应很显著</pre>
-
-<p><img src="郭芳midproject_files/figure-html/unnamed-chunk-3-2.png" width="720" /> 当p&lt;0.01时认为序列平稳 由图可知，残差序列滞后30阶后，残差自回归函数的系数显著，序列仍然存在自相关。因此拒绝原假设，说明样本序列存在显著的ARCH效应。 综上，对数收益率序列具有波动聚集性，序列平稳，有显著ARCH效应。序列适合GARCH模型建模。</p>
-
-</article></slide><slide class=""><hgroup><h2></h2></hgroup><article  id="section-5" class="smaller ">
-
-<p><font size = 6> <strong>4.2.4 模型拟合</strong> <font></p>
-
-<p>我分别使用了SGARCH与EGARCH模型拟合序列。但由于是EGARCH能分析收益率序列的&ldquo;杠杆效应&rdquo;此处以EGARCH做演示。</p>
-
-<pre class = 'prettyprint lang-r'>myspec=ugarchspec(
-  variance.model = list(model = &quot;eGARCH&quot;, garchOrder = c(1, 1)),
-  mean.model = list(armaOrder = c(0,0), include.mean = TRUE),
-  distribution.model = &quot;std&quot;
-)
-
-myfit=ugarchfit(myspec,data=rlogdiff,solver=&quot;gosolnp&quot;)
-myfit</pre>
-
-<pre >## 
-## *---------------------------------*
-## *          GARCH Model Fit        *
-## *---------------------------------*
-## 
-## Conditional Variance Dynamics    
-## -----------------------------------
-## GARCH Model  : eGARCH(1,1)
-## Mean Model   : ARFIMA(0,0,0)
-## Distribution : std 
-## 
-## Optimal Parameters
-## ------------------------------------
-##         Estimate  Std. Error   t value Pr(&gt;|t|)
-## mu      0.057175    0.024824   2.30326 0.021264
-## omega   0.003425    0.004563   0.75048 0.452963
-## alpha1 -0.048014    0.020557  -2.33571 0.019506
-## beta1   0.986552    0.001771 557.05211 0.000000
-## gamma1  0.169875    0.029654   5.72854 0.000000
-## shape   4.204998    0.515718   8.15368 0.000000
-## 
-## Robust Standard Errors:
-##         Estimate  Std. Error    t value Pr(&gt;|t|)
-## mu      0.057175    0.025017    2.28546 0.022286
-## omega   0.003425    0.004751    0.72088 0.470982
-## alpha1 -0.048014    0.021506   -2.23265 0.025572
-## beta1   0.986552    0.000535 1842.72113 0.000000
-## gamma1  0.169875    0.031097    5.46270 0.000000
-## shape   4.204998    0.520362    8.08092 0.000000
-## 
-## LogLikelihood : -1915.07 
-## 
-## Information Criteria
-## ------------------------------------
-##                    
-## Akaike       3.1519
-## Bayes        3.1770
-## Shibata      3.1518
-## Hannan-Quinn 3.1613
-## 
-## Weighted Ljung-Box Test on Standardized Residuals
-## ------------------------------------
-##                         statistic p-value
-## Lag[1]                      1.882  0.1701
-## Lag[2*(p+q)+(p+q)-1][2]     2.062  0.2527
-## Lag[4*(p+q)+(p+q)-1][5]     5.022  0.1513
-## d.o.f=0
-## H0 : No serial correlation
-## 
-## Weighted Ljung-Box Test on Standardized Squared Residuals
-## ------------------------------------
-##                         statistic p-value
-## Lag[1]                      1.471  0.2252
-## Lag[2*(p+q)+(p+q)-1][5]     4.322  0.2166
-## Lag[4*(p+q)+(p+q)-1][9]     6.107  0.2861
-## d.o.f=2
-## 
-## Weighted ARCH LM Tests
-## ------------------------------------
-##             Statistic Shape Scale P-Value
-## ARCH Lag[3]     4.408 0.500 2.000 0.03576
-## ARCH Lag[5]     4.621 1.440 1.667 0.12564
-## ARCH Lag[7]     5.285 2.315 1.543 0.19725
-## 
-## Nyblom stability test
-## ------------------------------------
-## Joint Statistic:  0.93
-## Individual Statistics:              
-## mu     0.04774
-## omega  0.12531
-## alpha1 0.31596
-## beta1  0.21456
-## gamma1 0.15391
-## shape  0.15829
-## 
-## Asymptotic Critical Values (10% 5% 1%)
-## Joint Statistic:          1.49 1.68 2.12
-## Individual Statistic:     0.35 0.47 0.75
-## 
-## Sign Bias Test
-## ------------------------------------
-##                    t-value   prob sig
-## Sign Bias            1.130 0.2586    
-## Negative Sign Bias   1.476 0.1402    
-## Positive Sign Bias   1.276 0.2021    
-## Joint Effect         3.840 0.2793    
-## 
-## 
-## Adjusted Pearson Goodness-of-Fit Test:
-## ------------------------------------
-##   group statistic p-value(g-1)
-## 1    20     11.27       0.9144
-## 2    30     28.67       0.4823
-## 3    40     37.34       0.5457
-## 4    50     38.38       0.8628
-## 
-## 
-## Elapsed time : 1.918093</pre>
-
-</article></slide><slide class=""><hgroup><h2></h2></hgroup><article  id="section-6" class="smaller ">
-
-<p><font size = 6> <strong>4.2.5 模型诊断</strong> <font></p>
-
-<pre class = 'prettyprint lang-r'>#残差正态性检验
-plot(myfit,which=8)</pre>
-
-<p><img src="郭芳midproject_files/figure-html/unnamed-chunk-5-1.png" width="720" /></p>
-
-<pre class = 'prettyprint lang-r'>plot(myfit,which=9)</pre>
-
-<p><img src="郭芳midproject_files/figure-html/unnamed-chunk-5-2.png" width="720" /></p>
-
-<pre class = 'prettyprint lang-r'>shapiro.test(coredata(residuals(myfit)))#值越大，越表示不是正态，P越小越非正态</pre>
-
-<pre >## 
-##  Shapiro-Wilk normality test
-## 
-## data:  coredata(residuals(myfit))
-## W = 0.88922, p-value &lt; 2.2e-16</pre>
-
-<pre class = 'prettyprint lang-r'>#残差相关性检验
-acf(coredata(residuals(myfit)))</pre>
-
-<p><img src="郭芳midproject_files/figure-html/unnamed-chunk-5-3.png" width="720" /></p>
-
-<pre class = 'prettyprint lang-r'>acf(residuals(myfit))</pre>
-
-<p><img src="郭芳midproject_files/figure-html/unnamed-chunk-5-4.png" width="720" /></p>
-
-<pre class = 'prettyprint lang-r'>plot(myfit,which=10)</pre>
-
-<p><img src="郭芳midproject_files/figure-html/unnamed-chunk-5-5.png" width="720" /></p>
-
-<pre class = 'prettyprint lang-r'>plot(myfit,which=11)</pre>
-
-<p><img src="郭芳midproject_files/figure-html/unnamed-chunk-5-6.png" width="720" /></p>
-
-<pre class = 'prettyprint lang-r'>#系数是否显著
-myfit #看P值是否够小</pre>
-
-<pre >## 
-## *---------------------------------*
-## *          GARCH Model Fit        *
-## *---------------------------------*
-## 
-## Conditional Variance Dynamics    
-## -----------------------------------
-## GARCH Model  : eGARCH(1,1)
-## Mean Model   : ARFIMA(0,0,0)
-## Distribution : std 
-## 
-## Optimal Parameters
-## ------------------------------------
-##         Estimate  Std. Error   t value Pr(&gt;|t|)
-## mu      0.057175    0.024824   2.30326 0.021264
-## omega   0.003425    0.004563   0.75048 0.452963
-## alpha1 -0.048014    0.020557  -2.33571 0.019506
-## beta1   0.986552    0.001771 557.05211 0.000000
-## gamma1  0.169875    0.029654   5.72854 0.000000
-## shape   4.204998    0.515718   8.15368 0.000000
-## 
-## Robust Standard Errors:
-##         Estimate  Std. Error    t value Pr(&gt;|t|)
-## mu      0.057175    0.025017    2.28546 0.022286
-## omega   0.003425    0.004751    0.72088 0.470982
-## alpha1 -0.048014    0.021506   -2.23265 0.025572
-## beta1   0.986552    0.000535 1842.72113 0.000000
-## gamma1  0.169875    0.031097    5.46270 0.000000
-## shape   4.204998    0.520362    8.08092 0.000000
-## 
-## LogLikelihood : -1915.07 
-## 
-## Information Criteria
-## ------------------------------------
-##                    
-## Akaike       3.1519
-## Bayes        3.1770
-## Shibata      3.1518
-## Hannan-Quinn 3.1613
-## 
-## Weighted Ljung-Box Test on Standardized Residuals
-## ------------------------------------
-##                         statistic p-value
-## Lag[1]                      1.882  0.1701
-## Lag[2*(p+q)+(p+q)-1][2]     2.062  0.2527
-## Lag[4*(p+q)+(p+q)-1][5]     5.022  0.1513
-## d.o.f=0
-## H0 : No serial correlation
-## 
-## Weighted Ljung-Box Test on Standardized Squared Residuals
-## ------------------------------------
-##                         statistic p-value
-## Lag[1]                      1.471  0.2252
-## Lag[2*(p+q)+(p+q)-1][5]     4.322  0.2166
-## Lag[4*(p+q)+(p+q)-1][9]     6.107  0.2861
-## d.o.f=2
-## 
-## Weighted ARCH LM Tests
-## ------------------------------------
-##             Statistic Shape Scale P-Value
-## ARCH Lag[3]     4.408 0.500 2.000 0.03576
-## ARCH Lag[5]     4.621 1.440 1.667 0.12564
-## ARCH Lag[7]     5.285 2.315 1.543 0.19725
-## 
-## Nyblom stability test
-## ------------------------------------
-## Joint Statistic:  0.93
-## Individual Statistics:              
-## mu     0.04774
-## omega  0.12531
-## alpha1 0.31596
-## beta1  0.21456
-## gamma1 0.15391
-## shape  0.15829
-## 
-## Asymptotic Critical Values (10% 5% 1%)
-## Joint Statistic:          1.49 1.68 2.12
-## Individual Statistic:     0.35 0.47 0.75
-## 
-## Sign Bias Test
-## ------------------------------------
-##                    t-value   prob sig
-## Sign Bias            1.130 0.2586    
-## Negative Sign Bias   1.476 0.1402    
-## Positive Sign Bias   1.276 0.2021    
-## Joint Effect         3.840 0.2793    
-## 
-## 
-## Adjusted Pearson Goodness-of-Fit Test:
-## ------------------------------------
-##   group statistic p-value(g-1)
-## 1    20     11.27       0.9144
-## 2    30     28.67       0.4823
-## 3    40     37.34       0.5457
-## 4    50     38.38       0.8628
-## 
-## 
-## Elapsed time : 1.918093</pre>
-
-<pre class = 'prettyprint lang-r'>#拟合效果  残差如何
-plot(myfit,which=3)</pre>
-
-<p><img src="郭芳midproject_files/figure-html/unnamed-chunk-5-7.png" width="720" /></p>
-
-<pre class = 'prettyprint lang-r'>plot(residuals(myfit)) #看残差</pre>
-
-<p><img src="郭芳midproject_files/figure-html/unnamed-chunk-5-8.png" width="720" /></p>
-
-<pre class = 'prettyprint lang-r'>plot(myfit,which=12)</pre>
-
-<p><img src="郭芳midproject_files/figure-html/unnamed-chunk-5-9.png" width="720" /></p>
-
-<p>从上图可以看出,沪深300指数收益率在信息冲击小于零（即利坏消息或负冲击）和信息冲击大于零（即利好消息或正冲击时）时都比较陡峭，表明沪深300指数对消息敏感，抗风险能力较弱，这也间接说明沪深300指数非常适合用于研究疫情对我国股票市场带来的冲击。</p>
-
-</article></slide><slide class=""><hgroup><h2></h2></hgroup><article  id="section-7" class="smaller ">
-
-<p><font size = 6> <strong>4.2.6 基于VAR曲线的收益风险预警</strong> <font></p>
-
-<p>股票指数收益率计算公式为r_t=ln（e_(t))-ln(e_(t-1))，其中r_t为股票指数收益率，e_t和e_(t-1)分别为第t期和（t-1）期的股票指数收盘价. 股票对数收益率通常存在着一定的波动聚集性，而大波动并不是突然发生的，是由于某些原因带来的冲击的影响，大波动发生之前也应该有相应信号出现，比如异常低的收益率。</p>
-
-<pre class = 'prettyprint lang-r'>spec = ugarchspec(variance.model = list(model = &quot;sGARCH&quot;), distribution.model = &quot;std&quot;)
-cl = makePSOCKcluster(10)
-#滚动预测
-roll = ugarchroll(spec, rlogdiff, n.start =300,refit.every = 300,
-                  refit.window = &quot;moving&quot;, solver = &quot;hybrid&quot;, calculate.VaR = TRUE,
-                  VaR.alpha = c(0.01, 0.025, 0.05), cluster = cl,keep.coef = TRUE)
-
-report(roll, type = &quot;fpm&quot;)</pre>
-
-<pre >## 
-## GARCH Roll Mean Forecast Performance Measures
-## ---------------------------------------------
-## Model        : sGARCH
-## No.Refits    : 4
-## No.Forecasts: 919
-## 
-##      Stats
-## MSE 1.3520
-## MAE 0.8093
-## DAC 0.4940</pre>
-
-<pre class = 'prettyprint lang-r'>plot(roll,which=4,VaR.alpha=0.01)</pre>
-
-<p><img src="郭芳midproject_files/figure-html/unnamed-chunk-6-1.png" width="720" /></p>
-
-<p>由上图可知在较大波动率之前确实有一些点落在Var曲线以下（标注为红点）。但在波动平稳期，模型预警正确率不高（如2017年10月到2019年1月）所以该模型在波动率非平稳期有一定参考价值。</p>
-
-<p>以沪深300指数为例，在2020年初开始有个别点落在了var曲线以下这与新冠肺炎的出现时间相吻合。可见，沪深300指数的大跌在疫情出现之前是有留下一定信号的。</p>
-
-<p><br/> <br/> <br/> <br/></p>
-
-</article></slide><slide class="segue dark nobackground level1"><hgroup class = 'auto-fadein'><h2>5.knn预测</h2></hgroup><article  id="knn预测" class="smaller ">
-
-</article></slide><slide class=""><hgroup><h2></h2></hgroup><article  id="section-8" class="smaller ">
+</article></slide><slide class=""><hgroup><h2></h2></hgroup><article  id="section" class="smaller ">
 
 <p><font size=6> <strong>5.1 tsfknn介绍 </strong> </font></p>
 
@@ -3637,7 +3146,7 @@ library(ggplot2)
 library(ggfortify)
 autoplot(pred, highlight = &quot;neighbors&quot;, faceting = FALSE)</pre>
 
-</article></slide><slide class=""><hgroup><h2></h2></hgroup><article  id="section-9" class="smaller ">
+</article></slide><slide class=""><hgroup><h2></h2></hgroup><article  id="section-1" class="smaller ">
 
 <p><font size=6> <strong>5.2 实际预测结果 </strong> </font></p>
 
@@ -3649,7 +3158,7 @@ autoplot(pred, highlight = &quot;neighbors&quot;, faceting = FALSE)</pre>
 <li>实际数据部分是2014.12.26-2020.5.15的数据，预测部分是2020.5.16-2020.7.19日的股票指数</li>
 </ul>
 
-</article></slide><slide class=""><hgroup><h2></h2></hgroup><article  id="section-10" class="smaller ">
+</article></slide><slide class=""><hgroup><h2></h2></hgroup><article  id="section-2" class="smaller ">
 
 <p><font size=6> <strong>5.2实际预测结果</strong> </font> <img src="data:image/png;base64,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" width="80%" /></p>
 
@@ -3659,7 +3168,7 @@ autoplot(pred, highlight = &quot;neighbors&quot;, faceting = FALSE)</pre>
 <li>通过knn模型的拟合，发现疫情期间股票价格明显下降，从疫情基本结束之后，股票已开始出现逐渐回升</li>
 </ul>
 
-</article></slide><slide class=""><hgroup><h2></h2></hgroup><article  id="section-11" class="smaller ">
+</article></slide><slide class=""><hgroup><h2></h2></hgroup><article  id="section-3" class="smaller ">
 
 <font size=6> <strong>5.2实际预测结果</strong> </font>
 
@@ -3670,7 +3179,7 @@ autoplot(pred, highlight = &quot;neighbors&quot;, faceting = FALSE)</pre>
 <li>从实际数据图与预测结果图对比，可以更加明显的看到时间长度的不同</li>
 </ul>
 
-</article></slide><slide class=""><hgroup><h2></h2></hgroup><article  id="section-12" class="smaller ">
+</article></slide><slide class=""><hgroup><h2></h2></hgroup><article  id="section-4" class="smaller ">
 
 <p><font size=6> <strong>5.3预测过程</strong> </font></p>
 
@@ -3680,7 +3189,7 @@ autoplot(pred, highlight = &quot;neighbors&quot;, faceting = FALSE)</pre>
 <li>Instance表示未来预测点的特征，NN Features表示选择的36组最相似点的特征，NN Targets表示找到的最相似的36组点，每组预测数据都是对最相似的36组点的进行加权平均得到</li>
 </ul>
 
-</article></slide><slide class=""><hgroup><h2></h2></hgroup><article  id="section-13" class="smaller ">
+</article></slide><slide class=""><hgroup><h2></h2></hgroup><article  id="section-5" class="smaller ">
 
 <p><font size=6> <strong>5.4估计误差</strong> </font> <br/> <br/></p>
 
@@ -3705,7 +3214,7 @@ autoplot(pred, highlight = &quot;neighbors&quot;, faceting = FALSE)</pre>
 
 </article></slide><slide class="segue dark nobackground level1"><hgroup class = 'auto-fadein'><h2>6.展望</h2></hgroup><article  id="展望" class="smaller ">
 
-</article></slide><slide class=""><hgroup><h2></h2></hgroup><article  id="section-14" class="smaller ">
+</article></slide><slide class=""><hgroup><h2></h2></hgroup><article  id="section-6" class="smaller ">
 
 <p><font size=6> <strong>6.1 模型改进 </strong> </font></p>
 
