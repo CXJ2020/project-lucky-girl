@@ -1,0 +1,445 @@
+---
+title: "最终展示"
+author: "Liu yuzhi"
+date: "2020/6/4"
+output:
+  ioslides_presentation:
+    smaller: yes
+    widecreen: yes
+  slidy_presentation: default
+---
+
+<br/>
+<br/>
+<br/>
+<br/>
+
+
+
+##
+<font size=6>
+**4.1 模型介绍 **
+</font>
+
+
+*Realized GARCH *
+
+ - realGARCH模型由[Hansen，Huang和Shek（2012）提出](http://public.econ.duke.edu/~get/browse/courses/201/spr12/DOWNLOADS/WorkingPapers_Now_Published/phs_realized_garch_10.pdf) (HHS2012) 使用非对称动力学的表示将已实现的波动性度量与潜在的*真实波动性*联系起来。与标准GARCH模型不同，它是一个收益率和已实现波动性度量（本文中的重估计）的联合模型。对冲击的不对称反应也使得其表现形式更加灵活和丰富。
+
+
+ 
+ - 模型形式： 
+
+$$
+y_t= \mu_t + \sigma_t z_t, z_t \sim iid(0,1) \\
+log \sigma_t^2= \omega+ \sum_{i=1} ^ q \alpha_i log r_{t-i}+ \sum_{i=1} ^p \beta_i log \sigma_{t-1} ^2 \\
+log r_t= \xi + \delta log \sigma^2 _t + \tau (z_t)+ u_t, u_t \sim N(0, \lambda) 
+$$
+
+它定义了收益$y_t$、潜在条件方差$sigma_t^2$和已实现方差度量$r_t$。
+
+
+
+##
+<font size=6>
+**4.1 模型介绍 **
+</font>
+
+
+*Realized GARCH *
+
+不对称反应是通过$\tau（.）$来表示。
+
+$$
+\tau(z_t)= \eta_1 z_t+ \eta_2 (z_t^2 -1)
+$$
+
+$E\tau（z_t）=0$。此函数还构成创新闻影响曲线类型$\nu（z）$
+$$
+\nu(z)= E[log \sigma_t | z_{t-1}=z] - E[log \sigma_t]= \delta \nu(z)
+$$
+
+因此$\nu（z）$是波动率的变化，是标准化创新的函数。 
+
+
+
+
+##
+<font size=6>
+**4.2 假设 **
+</font>
+
+
+- 实际波动率是看不见的，所以我们只能对其进行估算，这也是波动率建模的难点。如果真值未知，很难判断预测质量。然而，研究人员开发出了已实现波动性的估计器，Bollerslev Diebold（2008年）](http://www.ssc.upenn.edu/~fdiebold/papers/paper50/abd071102.pdf)以及[Barndorff Nielsen和Shephard（2007）](http://www.economics.ox.ac.uk/Research/wp/pdf/paper240.pdf)以及[Shephard和Sheppard（2009）](http://www.economics.ox.ac.uk/research/WP/pdf/paper438.pdf)提出了一类基于高频的波动率（HEAVY）模型，HEAVY模型给出了一个很好的估计。
+
+
+- 假设： HEAVY模型实现的波动率估值器无偏且有效。
+
+
+- 下文中，将HEAVY估算值作为观察到的已实现的波动率来确定预测性能。
+
+
+
+##
+<font size=6>
+**4.3数据来源**
+</font>
+
+
+-  牛津曼定量金融研究所（Oxford Man Institute of Quantitative Finance）拥有一个[已实现的图书馆](http://realized.oxford-man.ox.ac.uk网站/)发布了股票指数和大宗商品的实时日实现波动性估计。作为股票实现波动性估计和日收益的来源。
+
+
+- 在本文中，对上证50指数，日经225指数以及标普500指数进行了建模与估计。
+
+
+##
+<font size=6>
+**4.3数据来源**
+</font>
+
+
+
+```{r, echo = F, eval = T }
+library(lubridate)
+library(rugarch)
+library(xts)
+library(ggplot2)
+library(parallel)
+``` 
+
+
+
+
+##
+<font size=6>
+**4.4预测**
+</font>
+
+
+*4.4.1上证50指数 *
+
+
+```{r, echo = F, eval = T}
+setwd ("D:/Vol_prediction")
+SPXdata<- read.csv('上证50.csv')
+SPXdata$SPX2.rvol<- sqrt(SPXdata$SPX2.rv)
+plot( x= SPXdata$DATE, y= SPXdata$SPX2.rvol, 
+      type = 'n',
+      xlab='DATE',
+      ylab= 'daily realized vol')
+lines(SPXdata$DATE, SPXdata$SPX2.rvol)
+```
+
+
+
+
+##
+<font size=6>
+**4.4预测**
+</font>
+
+
+*4.4.1上证50指数 *
+ 
+ - ARFIMA（0，d，0）-eGARCH（1，1）
+ - 由于已实现波动率是“已知的”，直接对已实现波动率建模。
+ 
+```{r, echo = F, eval = T, out.width = '80%'}
+load('arfima_egarch_model2')
+arfima_egarch_model$spec
+```
+
+
+
+##
+<font size=6>
+**4.4预测**
+</font>
+
+
+*4.4.1上证50指数 *
+ 
+ 
+ - 实际波动率与预测波动率 
+```{r, echo = T, eval = T}
+arfima_egarch_model$plot
+
+```
+
+
+
+##
+<font size=6>
+**4.4预测**
+</font>
+
+
+*4.4.1上证50指数 * 
+
+
+ - 预测结果与实际情况有很强的相关性，超过75%。
+
+```{r, echo = T, eval = T, out.width = '80%'}
+cor( arfima_egarch_model$roll.pred$realized_vol, arfima_egarch_model$roll.pred$arfima_egarch.predicted_vol, method = 'spearman')
+```
+
+
+
+##
+<font size=6>
+**4.4预测**
+</font>
+
+
+*4.4.1上证50指数 * 
+
+
+ - 预测20个工作日的数据，即2020年6月6日-2020年6月26日的数据。
+`
+```{r, echo = F, eval = T, out.width = '80%'}
+rVol<- data.frame(rvol= SPXdata$SPX2.rvol)
+rownames(rVol)<- ymd(SPXdata$DATE)
+arfima_egarch.model<- ugarchspec(mean.model = list(armaOrder= c(0,0),
+                                                   arfima=TRUE),
+                                 variance.model = list(model='eGARCH'))
+arfima_egarch.fitted<- ugarchfit(spec = arfima_egarch.model, 
+                                 data= rVol)
+forc = ugarchforecast (arfima_egarch.fitted, n.ahead = 20)
+forc
+```
+
+
+##
+<font size=6>
+**4.4预测**
+</font>
+
+
+*4.4.2日经225指数 *
+ 
+ 
+```{r, echo = F, eval = T}
+setwd ("D:/Vol_prediction")
+SPXdata<- read.csv('日经225.csv')
+rownames(SPXdata)<- ymd( SPXdata$DATE) 
+SPXdata$SPX2.rvol<- sqrt(SPXdata$SPX2.rv)
+library(ggplot2)
+# g<- ggplot(SPXdata, aes(x= DATE, y= SPX2.rvol, group= 1))+
+#   geom_line()
+# g
+plot( x= SPXdata$DATE, y= SPXdata$SPX2.rvol, 
+      type = 'n',
+      xlab='DATE',
+      ylab= 'daily realized vol')
+lines(SPXdata$DATE, SPXdata$SPX2.rvol)
+```
+
+
+##
+<font size=6>
+**4.4预测**
+</font>
+
+
+
+*4.4.2日经225指数 *
+
+
+- ARMA-eGARCH
+```{r, echo = F, eval = T, out.width = '80%'}
+load('egarch_model1')
+egarch_model$spec
+```
+
+
+
+##
+<font size=6>
+**4.4预测**
+</font>
+
+
+*4.4.2日经225指数 *
+
+
+ - 实际波动率与预测波动率
+```{r, echo = T, eval = T}
+egarch_model$plot
+```
+
+
+
+##
+<font size=6>
+**4.4预测**
+</font>
+
+
+*4.4.2日经225指数 * 
+ 
+ 
+ - 预测结果与实际情况有很强的相关性，超过75%。
+
+```{r, echo = T, eval = T}
+cor( egarch_model$roll.pred$realized_vol, egarch_model$roll.pred$egarch.predicted_vol, method = 'spearman')
+```
+
+
+
+##
+<font size=6>
+**4.4预测**
+</font>
+
+
+*4.4.2日经225指数 * 
+
+
+ - 预测20个工作日的数据，即2020年6月6日-2020年6月26日的数据。
+```{r, echo = F, eval = T, out.width = '80%'}
+
+rm(list=ls())
+
+library(lubridate)
+setwd ("D:/Vol_prediction")
+SPXdata<- read.csv('日经225.csv')
+rownames(SPXdata)<- ymd( SPXdata$DATE)
+SPXdata$SPX2.rvol<- sqrt(SPXdata$SPX2.rv)
+
+egarch<- ugarchspec(variance.model = list( model='eGARCH'),
+                    mean.model = list( armaOrder= c(1,1)),
+                    distribution.model = 'std')
+egarch_fitted<- ugarchfit(egarch, data= SPXdata$SPX2.r)
+forc = ugarchforecast (egarch_fitted, n.ahead = 20)
+forc
+```
+
+
+
+##
+<font size=6>
+**4.4预测**
+</font>
+
+
+*4.4.3标普500指数 *
+ 
+ 
+```{r, echo = F, eval = T}
+setwd ("D:/Vol_prediction")
+SPXdata<- read.csv('标普500.csv')
+rownames(SPXdata)<- ymd( SPXdata$DATE) 
+SPXdata$SPX2.rvol<- sqrt(SPXdata$SPX2.rv)
+library(ggplot2)
+# g<- ggplot(SPXdata, aes(x= DATE, y= SPX2.rvol, group= 1))+
+#   geom_line()
+# g
+plot( x= SPXdata$DATE, y= SPXdata$SPX2.rvol, 
+      type = 'n',
+      xlab='DATE',
+      ylab= 'daily realized vol')
+lines(SPXdata$DATE, SPXdata$SPX2.rvol)
+```
+
+
+
+
+##
+<font size=6>
+**4.4预测**
+</font>
+
+
+*4.4.3标普500指数 *
+
+
+- realGARCH
+
+```{r, echo = F, eval = T, out.width = '80%'}
+load('rgarch_model1')
+rgarch_model$spec
+```
+
+
+
+##
+<font size=6>
+**4.4预测**
+</font>
+
+
+*4.4.3标普500指数 *
+
+
+ - 实际波动率与预测波动率
+```{r, echo = T, eval = T}
+rgarch_model$plot
+
+```
+
+
+
+##
+<font size=6>
+**4.4预测**
+</font>
+
+
+*4.4.3标普500指数 *
+ 
+ 
+ - 预测结果与实际情况有很强的相关性，超过82%。
+
+```{r, echo = T, eval = T}
+cor( rgarch_model$roll.pred$realized_vol, rgarch_model$roll.pred$rgarch.prediction_vol, method = 'spearman')
+```
+
+
+
+##
+<font size=6>
+**4.4预测**
+</font>
+
+
+*4.4.3标普500指数 * 
+
+
+ - 预测20个工作日的数据，即2020年6月6日-2020年6月26日的数据。
+```{r, echo = F, eval = T, out.width = '80%'}
+
+rm(list=ls())
+
+library(lubridate)
+setwd ("D:/Vol_prediction")
+SPXdata<- read.csv('标普500.csv')
+rownames(SPXdata)<- ymd( SPXdata$DATE)
+SPXdata$SPX2.rvol<- sqrt(SPXdata$SPX2.rv)
+
+rgarch.model<- ugarchspec(mean.model = list(armaOrder= c(5,2)),
+                          variance.model = list(model= 'realGARCH',
+                                                garchOrder= c(2,1)))
+setbounds(rgarch.model)<- list(alpha2=c (-1,1))
+SPXdata.xts<- SPXdata
+SPXdata.xts$DATE<- NULL
+SPXdata.xts<- as.xts(SPXdata.xts)
+rgarch.fit<- ugarchfit(spec = rgarch.model, 
+                       data= SPXdata.xts$SPX2.r, 
+                       solver= 'hybrid', 
+                       realizedVol= SPXdata.xts$SPX2.rvol)
+forc = ugarchforecast (rgarch.fit, n.ahead = 20)
+forc
+```
+
+
+##
+<font size=6>
+**4.4预测**
+</font>
+
+
+*4.4.4总结 *
+ 
+ 
+ - 用于每日收益序列的ARMA-eGARCH模型和用于实现波动率的ARFIMA-eGARCH模型利用不同的信息源。ARMA-eGARCH模型仅涉及每日收益,而ARFIMA-eGARCH模型基于HEAVY估算器，该估算器是根据日内数据计算得出的。RealGARCH模型将它们结合在一起。
+
