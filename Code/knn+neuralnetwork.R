@@ -5,12 +5,25 @@ plot.ts(data_time, ylab = "Closing Price", main = "after COVID-19")
 
 library(tsfknn)
 par(mfrow = c(2,1))
-##knn回归的原=原理：将lags个值作为特征
+##knn预测
 predknn_after_covid <- knn_forecasting(data_time, h = 65, lags = 1:30, k = 36, msas = "MIMO")
-#h-预测多少个值；lags-每组数据都是由30个值组成;找到36个最相近的组
+#h-预测多少个值；lags-将lags个值作为特征,每组数据都是由30个值组成;找到36个最相近的组
 plot(predknn_after_covid, main = "After COVID-19")
+#与预测点相关的点图示
+library(ggplot2)
+library(ggfortify)
+autoplot(predknn_after_covid, highlight = "neighbors", faceting = FALSE)
+#预测点的图示
+knn_resul<-predknn_after_covid$predictio
+plot(knn_resul)
+##预测结果与实际结果图示
 plot(data_time)
 plot(predknn_after_covid)
+##knn误差计算
+ro <- rolling_origin(predknn_after_covid, h = 65)
+ro$global_accu
+
+#dnn
 #计算单个隐藏层的神经节点数
 alpha <- 1.5^(-10)
 hn_after_covid <- length(data$收盘)/(alpha*(length(data$收盘) + 65))
@@ -31,4 +44,3 @@ rmse<-function(y,f){
 dnn_predict<-dnn_forecast_after_covid[["mean"]]
 predict_knn<-predknn_after_covid[["neighbors"]]
 predicr_frame<-data.frame(knn_predict,knn_predict)
-

@@ -30,7 +30,7 @@ library(ggplot2)#绘图
 library(ccgarch)#JB统计量
 
 #数据预处理
-StockData<-read.csv("C://Users//Administrator//Desktop//project-lucky-girl-master//data//hushen300.csv",encoding='utf-8',header = T)  #header = Falese 
+StockData<-read.csv("E://assignment2//project//midproject//data//hushen300.csv",encoding='utf-8',header = T)  #header = Falese 
 time<-as.Date(StockData$'time',format="%Y/%m/%d")
 closeprice<-StockData$'closeprice'
 data<-zoo(closeprice,time)
