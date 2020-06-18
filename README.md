@@ -12,5 +12,5 @@ EGRACH-MODEL中存放着代码，用于最终报告——liu的展示。
 
 3.Proposal文件夹---存放项目建议书  
 
-4.midproject是中期报告的完整内容，生成 html 的 Rmd在 Code 中，为 midproject展示.Rmd
+4.midproject是中期报告的完整内容，生成 html 的 Rmd在 Code 中，文件名为 midproject展示.Rmd
 
