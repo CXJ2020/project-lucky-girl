@@ -14,3 +14,7 @@ EGRACH-MODEL中存放着代码，用于最终报告——liu的展示。
 
 4.midproject是中期报告的完整内容，生成 html 的 Rmd在 Code 中，文件名为 midproject展示.Rmd
 
+5.final中存放最后一次报告相关的展示内容
+
+6.report为最终报告的内容
+
