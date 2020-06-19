@@ -14,34 +14,53 @@ papersize: letter
 
 # 1 引言 
 
-&emsp;&emsp;2020年初，新冠肺炎疫情给中国带来了巨大的挑战。面对严峻形势我们付出最大的努力防控疫情但是在积极应对疫情的时候也要认识到这次疫情给经济带来的巨大冲击。突发大规模疫情往往表现为爆发突然、传播速度快、影响区域相对集中、社会恐慌程度高等特点  
-&emsp;&emsp;金融市场尤其是股票市场受到投资者的情绪影响程度较大。新冠肺炎疫情极大地影响了投资者的信心以及投资者对经济基本面的悲观预期使疫情发生以来我国的股票市场发生大幅震荡，当新冠肺炎疫情在全球快速蔓延后，美国等国家的金融市场也发生大幅震荡
+&emsp;&emsp;2020年初，新冠肺炎疫情给中国带来了巨大的挑战。面对严峻形势我们付出最大的努力防控疫情但是在积极应对疫情的时候也要认识到这次疫情给经济带来的巨大冲击。突发大规模疫情往往表现为爆发突然、传播速度快、影响区域相对集中、社会恐慌程度高等特点。  
+&emsp;&emsp;金融市场尤其是股票市场受到投资者的情绪影响程度较大。新冠肺炎疫情极大地影响了投资者的信心以及投资者对经济基本面的悲观预期使疫情发生以来我国的股票市场发生大幅震荡，当新冠肺炎疫情在全球快速蔓延后，美国等国家的金融市场也发生大幅震荡。
 
 # 2 模型介绍
 ## 2.1 DCC-GARCH模型
 &emsp;&emsp;Engle(2002)在文章首次提出可以运用DCC-GACH模型(Dynamic Conditional Correlational Autoregressive Conditional Heteroscedasticity Model)，即动态相关多变量广义自回归条件异方差模型来度量两个或者多个不同时间序列数据的动态波动相关性。该模型放宽了CCC-GARCH模型中对时间序列数据相关性的波动系数为常数的假设条件。认为实际情况下时间序列波动是时变的。在这篇论文发表后，国内外很多专家学者不断对其理论进行丰富和扩充，逐渐建立起关于DCC-GARCH模型成熟完善的理论体系。模型可通过下列公式刻画：
-```{r echo=FALSE, out.width = '100%'} 
-knitr::include_graphics("./1.png")
-```
-```{r echo=FALSE, out.width = '100%'} 
-knitr::include_graphics("./2.png")
-```
+$$
+r_{it}=c+\sum_{j=1}^m\varphi_{ij}r_{it-j}+\sum_{k=1}^n\phi_{ik}\varepsilon_{it-k}+e_{it}  \\ 
+e_{it}=v_{it}\sqrt{h_{it}} \\ 
+h_{it}=\omega_i+\sum_{j=1}^p\alpha_{ij}h_{it-j}+\sum_{k=1}^q\beta_{ik}e_{it-k}^2  \\
+H_t=(h_{ijt})=D_t^{1/2}R_tD_t^{1/2}  \\  
+D_t=diag(h_{11t}^{1/2},h_{22t}^{1/2},...,h_{nnt}^{1/2}) \\ 
+R_t=diag(Q_t)^{-1/2}Q_tdiag(Q_t)^{-1/2}=\left[\begin{matrix}
+1 & \cdots & \rho_{1Nt}\\
+\vdots & \ddots & \vdots\\
+\rho_{\bar{N}1t} & \cdots & 1
+\end{matrix}
+\right]\\
+Q_t=(q_{ijt})(1-\sum_{m=1}^M\alpha_m-\sum_{n=1}^N\beta_n)\overline{Q}+\sum_{m=1}^M\alpha_m(\varepsilon_{t-m}\varepsilon_{t-m}^{'})+\sum_{n=1}^N\beta_nQ_{t-n}=\\
+(1-\alpha-\beta)\overline{Q}+\alpha u_{t-1}u_t^{'}+\beta Q_{t-1}\\
+q_{ijt}=(1-\alpha-\beta)overline{q_{ij}}+\alpha u_{it-1}+\beta q_{ijt-1}\\
+\overline{Q}=T^{-1}\sum_{t=1}^T\varepsilon_{t}\varepsilon_{t}^{'}
+$$
+
 DCC-GARCH模型的二元变量模型相关系数表达式：
-```{r echo=FALSE, out.width = '100%'} 
-knitr::include_graphics("./3.png")
-```
+$$
+\rho_{12t}=\frac{(1-\alpha-\beta)\overline{q_{12}}+\alpha u_{1,t-1}u_{2,t-1}+\beta\overline{q_{12t-1}}}{\sqrt{[(1-\alpha-\beta)\overline{q_{11}}+\alpha u_{1,t-1}^{2}+ \beta q_{11t-1}]+[(1-\alpha-\beta)\overline{q_{22}}+\alpha u_{2,t-1}^2+\beta q_{22t-1}]}}
+$$
+
 &emsp;&emsp;上述表达式中，下标$i=1…N$,$N$代表总体样本量为$N$个的资产收益率的时间序列；$D_t$代表含有条件方差的对角矩阵：$ε_t=D_t^{-1} e_t$代表向量标准化残差；$H_t$代表包含时变序列函数方程的学方差矩阵；$R_t$表示由条件相关系数构成的矩阵；$e_{it}$是第$i$个资产收益率时间序列均值方程的残差；$Q_t$表示包含$q_{iit}$、$q_{jjt}$和$q_{ijt}$等相关元素构成的$N×N$维正定矩阵；$\overline{Q}$代表由标准化残差$u_t$构成的无条件方差协方差矩阵；$\rho_{12t}$为二元变量模型相关系数：$α>0$表示多元$GARCH$模型里前期标准化残差平方系数，$β>0$代表前期条件异方差系测度波动的持续性；$α、β$表示$DCC-GARCH$模型的动态相关系数，满足$0<α+β<1$。
 
 ## 2.2 GARCH模型
 &emsp;&emsp;传统的波动性预测可以运用到期权定价，风险管理和以波动性为基础的交易策略。近年来GARCH模型族被广泛的运用在模拟预测金融资产的波动性上。标准GARCH模型于1986年被Bollerslev提出，之后为了规范条件方差，更多复杂的GRACH模型应运而生。  
-&emsp;&emsp;关于GARCH模型族的文献记录很广泛,但这里我们只选用七个最为普遍的GARCH模型,GARCH,EGARCH,SGARCH,TGARCH,AVGARCH,APARCH和NGARCH，等式如下。
+&emsp;&emsp;关于GARCH模型族的文献记录很广泛,但这里我们只选用七个最为普遍的GARCH模型,GARCH,EGARCH,SGARCH,TGARCH,AVGARCH,APARCH和NGARCH，等式如下：
 
-```{r echo=FALSE, out.width = '70%'} 
-knitr::include_graphics("./4.png")
-```
+$$
+GARCH:\delta_t^2=\omega+\sum_{i=1}^p\alpha_i\varepsilon_{t-i}^2+\sum_{j=1}^a\beta_j\delta_{t-j}^2 \\
+TGARCH:\delta_t=\omega+\sum_{i=1}^p\alpha_i[(1-\gamma_i)\varepsilon_{t-i}^{+}-(1+\gamma_i)\varepsilon_{t-i}^{-}]+\sum_{j=1}^a\beta_j\delta_{t-j}\\
+AVGARCH:\delta_t=\omega+\sum_{i=1}^p\alpha_i|\varepsilon_{t-i}|+\sum_{j=1}^a\beta_j\delta_{t-j}\\
+NGARCH:\delta_t^\sigma=\omega+\sum_{i=1}^p \alpha_i|\varepsilon_{t-1}|^\sigma+\sum_{j=1}^a\beta_j\delta_{t-j}^\sigma \\
+APARCH:\delta_t^\sigma=\omega+\sum_{i=1}^p\alpha_i[|\varepsilon_{t-1}|-\gamma_i\varepsilon_{t-1}]^\sigma+\sum_{j=1}^a\beta_j\delta_{t-j}^\sigma  \\
+GJR:\delta_t^2=\omega+\sum_{i=1}^p[\alpha_i+\gamma_i I_{\varepsilon>0}]\varepsilon_{t-i}^2+\sum_{j=1}^{a}\beta_j\delta_{t-j}^2 \\
+EGARCH:log(\delta_t^2)=\omega+\sum_{i=1}^p\alpha_i e_{t-i}+\gamma_i(|e_{t-i}|-E|e_{t-i}|)+\sum_{j=1}^a\beta_j log(\delta_{t-j}^2)  \\
+$$
 
 ## 2.3 realized GARCH模型
-&emsp;&emsp;realGARCH模型由[Hansen，Huang和Shek（2012）提出](http://public.econ.duke.edu/~get/browse/courses/201/spr12/DOWNLOADS/WorkingPapers_Now_Published/phs_realized_garch_10.pdf) (HHS2012) 使用非对称动力学的表示将已实现的波动性度量与潜在的真实波动性联系起来。与标准GARCH模型不同，它是一个收益率和已实现波动性度量（本文中的重估计）的联合模型。对冲击的不对称反应也使得其表现形式更加灵活和丰富。  
+&emsp;&emsp;realGARCH模型由[Hansen，Huang和Shek（2012）提出， 使用非对称动力学的表示将已实现的波动性度量与潜在的真实波动性联系起来。与标准GARCH模型不同，它是一个收益率和已实现波动性度量（本文中的重估计）的联合模型。对冲击的不对称反应也使得其表现形式更加灵活和丰富。  
 &emsp;&emsp;在该模型中，还做出了如下假设，实际波动率是看不见的，所以我们只能对其进行估算，这也是波动率建模的难点。如果真值未知，很难判断预测质量。然而，研究人员开发出了已实现波动性的估计器，Bollerslev Diebold（2008年）以及Barndorff Nielsen和Shephard（2007）以及[Shephard和Sheppard（2009) 提出了一类基于高频的波动率（HEAVY）模型，HEAVY模型给出了一个很好的估计。  
 &emsp;&emsp;假设：HEAVY模型实现的波动率估值器无偏且有效。下文中，将HEAVY估算值作为观察到的已实现的波动率来确定预测性能。  
 &emsp;&emsp;模型形式： 
@@ -149,14 +168,14 @@ knitr::include_graphics("./12.png")
 ```
 
 ### 5.2.5 市场冲击分析
-&emsp;&emsp;信息冲击小于零表示为利坏消息或负冲击，信息冲击大于零表示为利好消息或正冲击，由下图可以看出美国、日本、中国香港股票市场对利坏消息敏感，而对利好消息保持谨慎。而沪深300指数代表的我国股市对利好利坏消息均敏感，体现出我国股票市场抗风险能力的薄弱性
+&emsp;&emsp;信息冲击小于零表示为利坏消息或负冲击，信息冲击大于零表示为利好消息或正冲击，由下图可以看出美国、日本、中国香港股票市场对利坏消息敏感，而对利好消息保持谨慎。而沪深300指数代表的我国股市对利好利坏消息均敏感，体现出我国股票市场抗风险能力的薄弱性。
 
 ```{r echo=FALSE, out.width = '70%'} 
 knitr::include_graphics("./13.png")
 ```
 
 ### 5.2.6 基于VAR曲线的收益风险预警
-&emsp;&emsp;以我国沪深300指数和美国标普指数为例进行对比，在疫情爆发初始也就是2020年初开始已经有少数预警点出现（标注为红点），而美国股市预警点的出现时间相对滞后，这也与美国新冠肺炎的爆发时间相吻合。可见，股票指数的大跌在疫情出现之前是有留下一定信号的.
+&emsp;&emsp;以我国沪深300指数和美国标普指数为例进行对比，在疫情爆发初始也就是2020年初开始已经有少数预警点出现（标注为红点），而美国股市预警点的出现时间相对滞后，这也与美国新冠肺炎的爆发时间相吻合。可见，股票指数的大跌在疫情出现之前是有留下一定信号的。
 
 ```{r echo=FALSE, out.width = '70%'} 
 knitr::include_graphics("./14.png")
