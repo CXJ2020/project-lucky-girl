@@ -2,15 +2,14 @@
 title: "疫情下股票数据的预测分析"
 author: "程慧琦 谭晴月 刘昱枝 郭芳"
 date: "2020/6/15"
-output: html_document
+output:
+  pdf_document: default
 fontsize: 11pt
-keywords: 股票预测；DCC-GARCH； GARCH族模型；ARFIMA
-documentclass: article
 papersize: letter
-
+documentclass: article
 ---
 # 摘要
-&emsp;&emsp;本文采用DCC-GARCH模型计算中国和美国股票市场收益率的联动相关系数，以此研究两国股票市场的联动效应，考察2015年1月至2020年6月中美两国股市共同波动变化程度。为有效度量自疫情发生以来我国股票市场上表现出的的不确定性和风险性，本文运用GARCH族模型拟合了股票指数收益率的波动性方程并实证研究了全球有代表性的美国标准普尔指数、香港恒生指数、日本日经指数和我国的沪深300指数。结果表明四个指数股票收益率均有聚集性、持续性，股票市场存在着冲击的非对称性。具体而言，美国、日本、中国香港股票市场对利坏消息敏感，而对利好消息保持谨慎。而沪深300指数代表的我国股市对利好利坏消息均敏感，体现出我国股票市场抗风险能力的薄弱性。此外，本文尝试使用SGARCH模型对股票收益率序列进行滚动预测，同时文章首创性的基于Var曲线提出了股市危机预警信号。研究表明在疫情爆发初始股市就已经发出了危机预警信号。
+&emsp;&emsp;本文采用DCC-GARCH模型计算中国和美国股票市场收益率的联动相关系数，以此研究两国股票市场的联动效应，考察2015年1月至2020年6月中美两国股市共同波动变化程度。为有效度量自疫情发生以来我国股票市场上表现出的的不确定性和风险性，本文运用GARCH族模型拟合了股票指数收益率的波动性方程并实证研究了全球有代表性的美国标准普尔指数、香港恒生指数、日本日经指数和我国的沪深300指数。结果表明四个指数股票收益率均有聚集性、持续性，股票市场存在着冲击的非对称性。具体而言，美国、日本、中国香港股票市场对利坏消息敏感，而对利好消息保持谨慎。而沪深300指数代表的我国股市对利好利坏消息均敏感，体现出我国股票市场抗风险能力的薄弱性。此外，本文尝试使用SGARCH模型对股票收益率序列进行滚动预测，同时文章首创性的基于Var曲线提出了股市危机预警信号。研究表明在疫情爆发初始股市就已经发出了危机预警信号。最后，还对股票未来的发展趋势做了预测。
 
 # 1 引言 
 
@@ -21,11 +20,11 @@ papersize: letter
 ## 2.1 DCC-GARCH模型
 &emsp;&emsp;Engle(2002)在文章首次提出可以运用DCC-GACH模型(Dynamic Conditional Correlational Autoregressive Conditional Heteroscedasticity Model)，即动态相关多变量广义自回归条件异方差模型来度量两个或者多个不同时间序列数据的动态波动相关性。该模型放宽了CCC-GARCH模型中对时间序列数据相关性的波动系数为常数的假设条件。认为实际情况下时间序列波动是时变的。在这篇论文发表后，国内外很多专家学者不断对其理论进行丰富和扩充，逐渐建立起关于DCC-GARCH模型成熟完善的理论体系。模型可通过下列公式刻画：
 $$
-r_{it}=c+\sum_{j=1}^m\varphi_{ij}r_{it-j}+\sum_{k=1}^n\phi_{ik}\varepsilon_{it-k}+e_{it}  \\ 
-e_{it}=v_{it}\sqrt{h_{it}} \\ 
-h_{it}=\omega_i+\sum_{j=1}^p\alpha_{ij}h_{it-j}+\sum_{k=1}^q\beta_{ik}e_{it-k}^2  \\
-H_t=(h_{ijt})=D_t^{1/2}R_tD_t^{1/2}  \\  
-D_t=diag(h_{11t}^{1/2},h_{22t}^{1/2},...,h_{nnt}^{1/2}) \\ 
+r_{it}=c+\sum_{j=1}^m\varphi_{ij}r_{it-j}+\sum_{k=1}^n\phi_{ik}\varepsilon_{it-k}+e_{it}\\ 
+e_{it}=v_{it}\sqrt{h_{it}}\\ 
+h_{it}=\omega_i+\sum_{j=1}^p\alpha_{ij}h_{it-j}+\sum_{k=1}^q\beta_{ik}e_{it-k}^2\\
+H_t=(h_{ijt})=D_t^{1/2}R_tD_t^{1/2}\\  
+D_t=diag(h_{11t}^{1/2},h_{22t}^{1/2},...,h_{nnt}^{1/2})\\ 
 R_t=diag(Q_t)^{-1/2}Q_tdiag(Q_t)^{-1/2}=\left[\begin{matrix}
 1 & \cdots & \rho_{1Nt}\\
 \vdots & \ddots & \vdots\\
@@ -50,13 +49,13 @@ $$
 &emsp;&emsp;关于GARCH模型族的文献记录很广泛,但这里我们只选用七个最为普遍的GARCH模型,GARCH,EGARCH,SGARCH,TGARCH,AVGARCH,APARCH和NGARCH，等式如下：
 
 $$
-GARCH:\delta_t^2=\omega+\sum_{i=1}^p\alpha_i\varepsilon_{t-i}^2+\sum_{j=1}^a\beta_j\delta_{t-j}^2 \\
+GARCH:\delta_t^2=\omega+\sum_{i=1}^p\alpha_i\varepsilon_{t-i}^2+\sum_{j=1}^a\beta_j\delta_{t-j}^2\\
 TGARCH:\delta_t=\omega+\sum_{i=1}^p\alpha_i[(1-\gamma_i)\varepsilon_{t-i}^{+}-(1+\gamma_i)\varepsilon_{t-i}^{-}]+\sum_{j=1}^a\beta_j\delta_{t-j}\\
 AVGARCH:\delta_t=\omega+\sum_{i=1}^p\alpha_i|\varepsilon_{t-i}|+\sum_{j=1}^a\beta_j\delta_{t-j}\\
 NGARCH:\delta_t^\sigma=\omega+\sum_{i=1}^p \alpha_i|\varepsilon_{t-1}|^\sigma+\sum_{j=1}^a\beta_j\delta_{t-j}^\sigma \\
-APARCH:\delta_t^\sigma=\omega+\sum_{i=1}^p\alpha_i[|\varepsilon_{t-1}|-\gamma_i\varepsilon_{t-1}]^\sigma+\sum_{j=1}^a\beta_j\delta_{t-j}^\sigma  \\
+APARCH:\delta_t^\sigma=\omega+\sum_{i=1}^p\alpha_i[|\varepsilon_{t-1}|-\gamma_i\varepsilon_{t-1}]^\sigma+\sum_{j=1}^a\beta_j\delta_{t-j}^\sigma\\
 GJR:\delta_t^2=\omega+\sum_{i=1}^p[\alpha_i+\gamma_i I_{\varepsilon>0}]\varepsilon_{t-i}^2+\sum_{j=1}^{a}\beta_j\delta_{t-j}^2 \\
-EGARCH:log(\delta_t^2)=\omega+\sum_{i=1}^p\alpha_i e_{t-i}+\gamma_i(|e_{t-i}|-E|e_{t-i}|)+\sum_{j=1}^a\beta_j log(\delta_{t-j}^2)  \\
+EGARCH:log(\delta_t^2)=\omega+\sum_{i=1}^p\alpha_i e_{t-i}+\gamma_i(|e_{t-i}|-E|e_{t-i}|)+\sum_{j=1}^a\beta_j log(\delta_{t-j}^2)\\
 $$
 
 ## 2.3 realized GARCH模型
@@ -66,8 +65,8 @@ $$
 &emsp;&emsp;模型形式： 
 
 $$
-y_t= \mu_t + \sigma_t z_t, z_t \sim iid(0,1) \\
-log \sigma_t^2= \omega+ \sum_{i=1} ^ q \alpha_i log r_{t-i}+ \sum_{i=1} ^p \beta_i log \sigma_{t-1} ^2 \\
+y_t= \mu_t + \sigma_t z_t, z_t \sim iid(0,1)\\
+log \sigma_t^2= \omega+ \sum_{i=1} ^ q \alpha_i log r_{t-i}+ \sum_{i=1} ^p \beta_i log \sigma_{t-1} ^2\\
 log r_t= \xi + \delta log \sigma^2 _t + \tau (z_t)+ u_t, u_t \sim N(0, \lambda) 
 $$
 
@@ -78,12 +77,12 @@ $$
 \tau(z_t)= \eta_1 z_t+ \eta_2 (z_t^2 -1)
 $$
 
-$E\tau（z_t）=0$。此函数还构成创新闻影响曲线类型$\nu（z）$
+$E\tau(z_t)=0$。此函数还构成创新闻影响曲线类型$\nu(z)$
 $$
 \nu(z)= E[log \sigma_t | z_{t-1}=z] - E[log \sigma_t]= \delta \nu(z)
 $$
 
-因此$\nu（z）$是波动率的变化，是标准化创新的函数。 
+因此$\nu(z)$是波动率的变化，是标准化创新的函数。 
 
 # 3 数据介绍
 &emsp;&emsp;标准普尔指数由美国最大的证券研究机构标准普尔公司编制的用以反映美国股市行情变动的股票价格指数。计算方法采用加权算术平均法，能比道.琼斯指数更精确的反映股票市场的变化，因此从研究角度讲，SP500指数更具有参考价值。  
